@@ -247,6 +247,9 @@ class MycroftSkill(object):
             self._settings = SkillSettings(self._dir)
             return self._settings
 
+    def test(self, data={}):
+        print "Test"
+
     def bind(self, emitter):
         """ Register emitter with skill. """
         if emitter:
