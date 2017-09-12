@@ -248,6 +248,7 @@ class MycroftSkill(object):
             return self._settings
 
     def test(self, data={}):
+        """ Test func """
         print "Test"
 
     def bind(self, emitter):
