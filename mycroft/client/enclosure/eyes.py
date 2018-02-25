@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mycroft.util.log import LOG
 from threading import Thread, Lock
 import time
 
+LOG.info('EYES IMPORTED!')
 
 class EnclosureEyes(Thread):
     """
@@ -24,17 +26,22 @@ class EnclosureEyes(Thread):
     """
 
     def __init__(self, ws, writer):
+        super(EnclosureEyes, self).__init__()
         self.ws = ws
         self.writer = writer
         self.__init_events()
-
+        LOG.info('STARTING G O O GLY EYES')
         # Setup clearable/inspectable queue
         self.queue_lock = Lock()
         self.__queue = []
+        LOG.info('queue done')
 
         # Start queue handling thread
+        LOG.info('Starting thread')
+        self.running = True
         self.daemon = True
         self.start()
+        LOG.info('G O O GLY EYES Online')
 
     def __init_events(self):
         self.ws.on('enclosure.eyes.on', self.on)
@@ -53,17 +60,19 @@ class EnclosureEyes(Thread):
 
     def queue_clear(self):
         with self.queue_lock:
-            self.queue = []
+            self.__queue = []
 
     def queue_up(self, command, time=None, owner=None):
         with self.queue_lock:
-            self.queue.append((command, time, owner))
+            LOG.info('Queueing {}'.format(command))
+            self.__queue.insert(0, (command, time, owner))
 
     def run(self):
         while self.running:
             with self.queue_lock:
-                if len(self.queue) > 0:
-                    command, timeout, owner = self.queue.pop()
+                if len(self.__queue) > 0:
+                    command, timeout, owner = self.__queue.pop()
+                    LOG.info('Sending {}'.format(command))
                     self.writer.write(command)
                     time.sleep(timeout or 0.1)
                 else:
@@ -83,7 +92,7 @@ class EnclosureEyes(Thread):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
-        self.queue_up("eyes.blink=" + side)
+        self.queue_up("eyes.blink=" + side, 0.5)
 
     def narrow(self, event=None):
         self.queue_up("eyes.narrow")
@@ -111,7 +120,7 @@ class EnclosureEyes(Thread):
             g = int(event.data.get("g", g))
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
-        self.queue_up("eyes.set=" + str(idx) + "," + str(color))
+        self.queue_up("eyes.set=" + str(idx) + "," + str(color), 0.05)
 
     def fill(self, event=None):
         amount = 0
