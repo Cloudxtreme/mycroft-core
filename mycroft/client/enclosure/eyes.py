@@ -16,7 +16,6 @@ from mycroft.util.log import LOG
 from threading import Thread, Lock
 import time
 
-LOG.info('EYES IMPORTED!')
 
 class EnclosureEyes(Thread):
     """
@@ -62,10 +61,11 @@ class EnclosureEyes(Thread):
         with self.queue_lock:
             self.__queue = []
 
-    def queue_up(self, command, time=None, owner=None):
+    def queue_up(self, command, timestamp, time=None, owner=None):
         with self.queue_lock:
             LOG.info('Queueing {}'.format(command))
-            self.__queue.insert(0, (command, time, owner))
+            self.__queue.insert(0, (command, timestamp, time, owner))
+            self.__queue = sorted(self.__queue, key=lambda l: l[1])
 
     def run(self):
         while self.running:
@@ -83,16 +83,16 @@ class EnclosureEyes(Thread):
             self.queue = []
 
     def on(self, event=None):
-        self.queue_up("eyes.on")
+        self.queue_up("eyes.on", event.data['timestamp'])
 
     def off(self, event=None):
-        self.queue_up("eyes.off")
+        self.queue_up("eyes.off", event.data['timestamp'])
 
     def blink(self, event=None):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
-        self.queue_up("eyes.blink=" + side, 0.5)
+        self.queue_up("eyes.blink=" + side, 0.5, event.data['timestamp'])
 
     def narrow(self, event=None):
         self.queue_up("eyes.narrow")
@@ -100,7 +100,7 @@ class EnclosureEyes(Thread):
     def look(self, event=None):
         if event and event.data:
             side = event.data.get("side", "")
-            self.queue_up("eyes.look=" + side)
+            self.queue_up("eyes.look=" + side, event.data['timestamp'])
 
     def color(self, event=None):
         r, g, b = 255, 255, 255
@@ -109,7 +109,7 @@ class EnclosureEyes(Thread):
             g = int(event.data.get("g", g))
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
-        self.queue_up("eyes.color=" + str(color))
+        self.queue_up("eyes.color=" + str(color), event.data['timestamp'])
 
     def set_pixel(self, event=None):
         idx = 0
@@ -120,35 +120,36 @@ class EnclosureEyes(Thread):
             g = int(event.data.get("g", g))
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
-        self.queue_up("eyes.set=" + str(idx) + "," + str(color), 0.05)
+        self.queue_up("eyes.set=" + str(idx) + "," + str(color),
+                      event.data['timestamp', 0.05])
 
     def fill(self, event=None):
         amount = 0
         if event and event.data:
             percent = int(event.data.get("percentage", 0))
             amount = int(round(23.0 * percent / 100.0))
-        self.queue_up("eyes.fill=" + str(amount))
+        self.queue_up("eyes.fill=" + str(amount), event.data['timestamp'])
 
     def brightness(self, event=None):
         level = 30
         if event and event.data:
             level = event.data.get("level", level)
-        self.queue_up("eyes.level=" + str(level))
+        self.queue_up("eyes.level=" + str(level), event.data['timestamp'])
 
     def volume(self, event=None):
         volume = 4
         if event and event.data:
             volume = event.data.get("volume", volume)
-        self.queue_up("eyes.volume=" + str(volume))
+        self.queue_up("eyes.volume=" + str(volume), event.data['timestamp'])
 
     def reset(self, event=None):
-        self.queue_up("eyes.reset")
+        self.queue_up("eyes.reset", event.data['timestamp'])
 
     def spin(self, event=None):
-        self.queue_up("eyes.spin")
+        self.queue_up("eyes.spin", event.data['timestamp'])
 
     def timed_spin(self, event=None):
         length = 5000
         if event and event.data:
             length = event.data.get("length", length)
-        self.queue_up("eyes.spin=" + str(length))
+        self.queue_up("eyes.spin=" + str(length), event.data['timestamp'])

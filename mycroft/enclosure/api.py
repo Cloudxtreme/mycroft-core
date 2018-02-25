@@ -16,6 +16,7 @@ from PIL import Image
 
 import mycroft.client.enclosure.display_manager as DisplayManager
 from mycroft.messagebus.message import Message
+from monotonic import monotonic
 
 
 '''
@@ -56,45 +57,51 @@ class EnclosureAPI(object):
         Typically this would be represented by the eyes being 'open'
         and the mouth reset to its default (smile or blank).
         """
-        self.ws.emit(Message("enclosure.reset"))
+        self.ws.emit(Message("enclosure.reset", {"timestamp": monotonic()}))
 
     def system_reset(self):
         """The enclosure hardware should reset any CPUs, etc."""
-        self.ws.emit(Message("enclosure.system.reset"))
+        self.ws.emit(Message("enclosure.system.reset",
+                             {"timestamp": monotonic()}))
 
     def system_mute(self):
         """Mute (turn off) the system speaker."""
-        self.ws.emit(Message("enclosure.system.mute"))
+        self.ws.emit(Message("enclosure.system.mute",
+                             {"timestamp": monotonic()}))
 
     def system_unmute(self):
         """Unmute (turn on) the system speaker."""
-        self.ws.emit(Message("enclosure.system.unmute"))
+        self.ws.emit(Message("enclosure.system.unmute",
+                             {"timestamp": monotonic()}))
 
     def system_blink(self, times):
         """The 'eyes' should blink the given number of times.
         Args:
             times (int): number of times to blink
         """
-        self.ws.emit(Message("enclosure.system.blink", {'times': times}))
+        self.ws.emit(Message("enclosure.system.blink",
+                             {'times': times, 'timestamp': monotonic()}))
 
     def eyes_on(self):
         """Illuminate or show the eyes."""
-        self.ws.emit(Message("enclosure.eyes.on"))
+        self.ws.emit(Message("enclosure.eyes.on", {"timestamp": monotonic()}))
 
     def eyes_off(self):
         """Turn off or hide the eyes."""
-        self.ws.emit(Message("enclosure.eyes.off"))
+        self.ws.emit(Message("enclosure.eyes.off", {"timestamp": monotonic()}))
 
     def eyes_blink(self, side):
         """Make the eyes blink
         Args:
             side (str): 'r', 'l', or 'b' for 'right', 'left' or 'both'
         """
-        self.ws.emit(Message("enclosure.eyes.blink", {'side': side}))
+        self.ws.emit(Message("enclosure.eyes.blink",
+                             {'side': side, 'timestamp': monotonic()}))
 
     def eyes_narrow(self):
         """Make the eyes look narrow, like a squint"""
-        self.ws.emit(Message("enclosure.eyes.narrow"))
+        self.ws.emit(Message("enclosure.eyes.narrow",
+                             {"timestamp": monotonic()}))
 
     def eyes_look(self, side):
         """Make the eyes look to the given side
@@ -105,7 +112,8 @@ class EnclosureAPI(object):
                         'd' for down
                         'c' for crossed
         """
-        self.ws.emit(Message("enclosure.eyes.look", {'side': side}))
+        self.ws.emit(Message("enclosure.eyes.look",
+                             {'side': side, 'timestamp': monotonic()}))
 
     def eyes_color(self, r=255, g=255, b=255):
         """Change the eye color to the given RGB color
@@ -115,7 +123,9 @@ class EnclosureAPI(object):
             b (int): 0-255, blue value
         """
         self.ws.emit(Message("enclosure.eyes.color",
-                             {'r': r, 'g': g, 'b': b}))
+                             {'r': r, 'g': g, 'b': b,
+                              'timestamp': monotonic()}
+                             ))
 
     def eyes_setpixel(self, idx, r=255, g=255, b=255):
         """Set individual pixels of the Mark 1 neopixel eyes
@@ -128,7 +138,9 @@ class EnclosureAPI(object):
         if idx < 0 or idx > 23:
             raise ValueError('idx ({}) must be between 0-23'.format(str(idx)))
         self.ws.emit(Message("enclosure.eyes.setpixel",
-                             {'idx': idx, 'r': r, 'g': g, 'b': b}))
+                             {'idx': idx, 'r': r, 'g': g, 'b': b,
+                              'timestamp': monotonic()}
+                             ))
 
     def eyes_fill(self, percentage):
         """Use the eyes as a type of progress meter
@@ -139,18 +151,22 @@ class EnclosureAPI(object):
             raise ValueError('percentage ({}) must be between 0-100'.
                              format(str(percentage)))
         self.ws.emit(Message("enclosure.eyes.fill",
-                             {'percentage': percentage}))
+                             {'percentage': percentage,
+                              'timestamp': monotonic()}))
 
     def eyes_brightness(self, level=30):
         """Set the brightness of the eyes in the display.
         Args:
             level (int): 1-30, bigger numbers being brighter
         """
-        self.ws.emit(Message("enclosure.eyes.level", {'level': level}))
+        self.ws.emit(Message("enclosure.eyes.level",
+                             {'level': level, 'timestamp': monotonic()}))
 
     def eyes_reset(self):
         """Restore the eyes to their default (ready) state."""
-        self.ws.emit(Message("enclosure.eyes.reset"))
+        self.ws.emit(Message("enclosure.eyes.reset",
+                             {"timestamp": monotonic()}
+                             ))
 
     def eyes_spin(self):
         """Make the eyes 'roll'
@@ -163,7 +179,7 @@ class EnclosureAPI(object):
             length (int): duration in milliseconds of roll, None = forever
         """
         self.ws.emit(Message("enclosure.eyes.timedspin",
-                             {'length': length}))
+                             {'length': length, 'timestamp': monotonic()}))
 
     def eyes_volume(self, volume):
         """Indicate the volume using the eyes
@@ -173,16 +189,19 @@ class EnclosureAPI(object):
         if volume < 0 or volume > 11:
             raise ValueError('volume ({}) must be between 0-11'.
                              format(str(volume)))
-        self.ws.emit(Message("enclosure.eyes.volume", {'volume': volume}))
+        self.ws.emit(Message("enclosure.eyes.volume",
+                             {'volume': volume, 'timestamp': monotonic()}))
 
     def mouth_reset(self):
         """Restore the mouth display to normal (blank)"""
-        self.ws.emit(Message("enclosure.mouth.reset"))
+        self.ws.emit(Message("enclosure.mouth.reset",
+                             {'timestamp': monotonic()}))
         DisplayManager.set_active(self.name)
 
     def mouth_talk(self):
         """Show a generic 'talking' animation for non-synched speech"""
-        self.ws.emit(Message("enclosure.mouth.talk"))
+        self.ws.emit(Message("enclosure.mouth.talk",
+                             {'timestamp': monotonic()}))
         DisplayManager.set_active(self.name)
 
     def mouth_think(self):
@@ -192,12 +211,14 @@ class EnclosureAPI(object):
 
     def mouth_listen(self):
         """Show a 'thinking' image or animation"""
-        self.ws.emit(Message("enclosure.mouth.listen"))
+        self.ws.emit(Message("enclosure.mouth.listen",
+                             {'timestamp': monotonic()}))
         DisplayManager.set_active(self.name)
 
     def mouth_smile(self):
         """Show a 'smile' image or animation"""
-        self.ws.emit(Message("enclosure.mouth.smile"))
+        self.ws.emit(Message("enclosure.mouth.smile",
+                             {'timestamp': monotonic()}))
         DisplayManager.set_active(self.name)
 
     def mouth_viseme(self, code, time_until=0):
@@ -213,8 +234,9 @@ class EnclosureAPI(object):
             time_until (float): (optional) For timing, time.time() when this
                          shape expires, or 0 for display regardles of time
         """
-        self.ws.emit(Message("enclosure.mouth.viseme", {'code': code,
-                                                        'until': time_until}))
+        self.ws.emit(Message("enclosure.mouth.viseme",
+                             {'code': code, 'until': time_until,
+                              'timestamp': monotonic()}))
 
     def mouth_text(self, text=""):
         """Display text (scrolling as needed)
@@ -222,7 +244,8 @@ class EnclosureAPI(object):
             text (str): text string to display
         """
         DisplayManager.set_active(self.name)
-        self.ws.emit(Message("enclosure.mouth.text", {'text': text}))
+        self.ws.emit(Message("enclosure.mouth.text",
+                             {'text': text, 'timestamp': monotonic()}))
 
     def mouth_display(self, img_code="", x=0, y=0, refresh=True):
         """Display images on faceplate. Currently supports images up to 16x8,
@@ -242,7 +265,8 @@ class EnclosureAPI(object):
                              {'img_code': img_code,
                               'xOffset': x,
                               'yOffset': y,
-                              'clearPrev': refresh}))
+                              'clearPrev': refresh,
+                              'timestamp': monotonic()}))
 
     def mouth_display_png(self, image_absolute_path, threshold=70,
                           invert=False, x=0, y=0, refresh=True):
@@ -366,7 +390,8 @@ class EnclosureAPI(object):
                              {'img_code': encode,
                               'xOffset': x,
                               'yOffset': y,
-                              'clearPrev': refresh}))
+                              'clearPrev': refresh,
+                              'timestamp': monotonic()}))
 
     def weather_display(self, img_code, temp):
         """Show a the temperature and a weather icon
@@ -385,12 +410,15 @@ class EnclosureAPI(object):
         """
         DisplayManager.set_active(self.name)
         self.ws.emit(Message("enclosure.weather.display",
-                             {'img_code': img_code, 'temp': temp}))
+                             {'img_code': img_code, 'temp': temp,
+                              'timestamp': monotonic()}))
 
     def activate_mouth_events(self):
         """Enable movement of the mouth with speech"""
-        self.ws.emit(Message('enclosure.mouth.events.activate'))
+        self.ws.emit(Message('enclosure.mouth.events.activate',
+                             {'timestamp': monotonic()}))
 
     def deactivate_mouth_events(self):
         """Disable movement of the mouth with speech"""
-        self.ws.emit(Message('enclosure.mouth.events.deactivate'))
+        self.ws.emit(Message('enclosure.mouth.events.deactivate',
+                             {'timestamp': monotonic()}))
