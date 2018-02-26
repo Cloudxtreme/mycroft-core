@@ -20,10 +20,12 @@ import time
 
 class EnclosureComponent(Thread):
     def __init__(self, ws, writer):
-        super(EnclosureEyes, self).__init__()
+        super(EnclosureComponent, self).__init__()
         self.ws = ws
         self.writer = writer
         self.init_events()
+
+        self.state = None
         # Setup clearable/inspectable queue
         self.queue_lock = Lock()
         self.__queue = []
@@ -52,6 +54,10 @@ class EnclosureComponent(Thread):
                     command, timeout, owner, _ = self.__queue.pop()
                     LOG.info('Sending {}'.format(command))
                     self.writer.write(command)
+                    try:
+                        self.set_state(command)
+                    except Exception as e:
+                        LOG.exception(e)
                     time.sleep(timeout or 0.1)
                 else:
                     time.sleep(0.1)

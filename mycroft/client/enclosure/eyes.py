@@ -22,6 +22,9 @@ class EnclosureEyes(EnclosureComponent):
 
     Performs the associated command on Arduino by writing on the Serial port.
     """
+    def __init__(self, ws, writer):
+        super(EnclosureEyes, self).__init__()
+        self.pixels = [[0] * 12, [0] * 12]
 
     def init_events(self):
         self.ws.on('enclosure.eyes.on', self.on)
@@ -37,6 +40,28 @@ class EnclosureEyes(EnclosureComponent):
         self.ws.on('enclosure.eyes.reset', self.reset)
         self.ws.on('enclosure.eyes.setpixel', self.set_pixel)
         self.ws.on('enclosure.eyes.fill', self.fill)
+        self.ws.on('enclosure.eyes.status', self.status)
+
+    def set_state(self, command_string):
+        parts = command.split['=']
+        command = parts[0]
+        args = parts[1].split(',') if len(parts) > 1 else None
+        if command == 'eyes.set_pixel':
+            self.pixels[arg[0] // 12][arg[0] % 12] = arg[1]
+        elif command == 'eyes.color':
+            self.color = arg[0]
+        elif command in ['eyes.reset', 'eyes.blink']:
+            self.pixels = [[self.color] * 12, [self.color] * 12]
+            self.state = (command, args)
+        elif command == 'eyes.volume':
+            self.pixels = [
+                [self.color if i < args[0] else 0 for i in range(12)],
+                [self.color if i < args[0] else 0 for i in range(12)]
+            ]
+        self.state = (command, args, self.pixels)
+
+    def status(self, event):
+        ws.emit(event.reply({'state': self.state}))
 
     def on(self, event=None):
         self.queue_up("eyes.on", event.data['timestamp'])
@@ -44,7 +69,7 @@ class EnclosureEyes(EnclosureComponent):
     def off(self, event=None):
         self.queue_up("eyes.off", event.data['timestamp'])
 
-    def blink(self, event=None):
+    def blink(slf, event=None):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
