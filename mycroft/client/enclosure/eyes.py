@@ -23,7 +23,7 @@ class EnclosureEyes(EnclosureComponent):
     Performs the associated command on Arduino by writing on the Serial port.
     """
     def __init__(self, ws, writer):
-        super(EnclosureEyes, self).__init__()
+        super(EnclosureEyes, self).__init__(ws, writer)
         self.pixels = [[0] * 12, [0] * 12]
 
     def init_events(self):
