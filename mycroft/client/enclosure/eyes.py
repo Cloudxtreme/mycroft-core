@@ -13,36 +13,17 @@
 # limitations under the License.
 
 from mycroft.util.log import LOG
-from threading import Thread, Lock
-import time
+from .component import EnclosureComponent
 
 
-class EnclosureEyes(Thread):
+class EnclosureEyes(EnclosureComponent):
     """
     Listens to enclosure commands for Mycroft's Eyes.
 
     Performs the associated command on Arduino by writing on the Serial port.
     """
 
-    def __init__(self, ws, writer):
-        super(EnclosureEyes, self).__init__()
-        self.ws = ws
-        self.writer = writer
-        self.__init_events()
-        LOG.info('STARTING G O O GLY EYES')
-        # Setup clearable/inspectable queue
-        self.queue_lock = Lock()
-        self.__queue = []
-        LOG.info('queue done')
-
-        # Start queue handling thread
-        LOG.info('Starting thread')
-        self.running = True
-        self.daemon = True
-        self.start()
-        LOG.info('G O O GLY EYES Online')
-
-    def __init_events(self):
+    def init_events(self):
         self.ws.on('enclosure.eyes.on', self.on)
         self.ws.on('enclosure.eyes.off', self.off)
         self.ws.on('enclosure.eyes.blink', self.blink)
@@ -57,31 +38,6 @@ class EnclosureEyes(Thread):
         self.ws.on('enclosure.eyes.setpixel', self.set_pixel)
         self.ws.on('enclosure.eyes.fill', self.fill)
 
-    def queue_clear(self):
-        with self.queue_lock:
-            self.__queue = []
-
-    def queue_up(self, command, timestamp, time=None, owner=None):
-        with self.queue_lock:
-            LOG.info('Queueing {}'.format(command))
-            self.__queue.insert(0, (command, timestamp, time, owner))
-            self.__queue = sorted(self.__queue, key=lambda l: l[1])
-
-    def run(self):
-        while self.running:
-            with self.queue_lock:
-                if len(self.__queue) > 0:
-                    command, timeout, owner = self.__queue.pop()
-                    LOG.info('Sending {}'.format(command))
-                    self.writer.write(command)
-                    time.sleep(timeout or 0.1)
-                else:
-                    time.sleep(0.1)
-
-    def clear_queue(self):
-        with self.queue_lock:
-            self.queue = []
-
     def on(self, event=None):
         self.queue_up("eyes.on", event.data['timestamp'])
 
@@ -92,10 +48,10 @@ class EnclosureEyes(Thread):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
-        self.queue_up("eyes.blink=" + side, 0.5, event.data['timestamp'])
+        self.queue_up("eyes.blink=" + side, event.data['timestamp'], 0.5)
 
     def narrow(self, event=None):
-        self.queue_up("eyes.narrow")
+        self.queue_up("eyes.narrow", event.data['timestamp'])
 
     def look(self, event=None):
         if event and event.data:
@@ -121,7 +77,7 @@ class EnclosureEyes(Thread):
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
         self.queue_up("eyes.set=" + str(idx) + "," + str(color),
-                      event.data['timestamp', 0.05])
+                      event.data['timestamp'], 0.05)
 
     def fill(self, event=None):
         amount = 0
