@@ -43,7 +43,7 @@ class EnclosureEyes(EnclosureComponent):
         self.ws.on('enclosure.eyes.status', self.status)
 
     def set_state(self, command_string):
-        parts = command.split('=')
+        parts = command_string.split('=')
         command = parts[0]
         args = parts[1].split(',') if len(parts) > 1 else None
         if command == 'eyes.set_pixel':
