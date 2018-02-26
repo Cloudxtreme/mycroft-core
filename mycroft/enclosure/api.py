@@ -181,6 +181,9 @@ class EnclosureAPI(object):
         self.ws.emit(Message("enclosure.eyes.timedspin",
                              {'length': length, 'timestamp': monotonic()}))
 
+    def eye_status(self):
+        return self.ws.wait_for_response("enclosure.eyes.status")
+
     def eyes_volume(self, volume):
         """Indicate the volume using the eyes
         Args:
