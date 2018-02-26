@@ -43,7 +43,7 @@ class EnclosureEyes(EnclosureComponent):
         self.ws.on('enclosure.eyes.status', self.status)
 
     def set_state(self, command_string):
-        parts = command.split['=']
+        parts = command.split('=')
         command = parts[0]
         args = parts[1].split(',') if len(parts) > 1 else None
         if command == 'eyes.set_pixel':
@@ -69,7 +69,7 @@ class EnclosureEyes(EnclosureComponent):
     def off(self, event=None):
         self.queue_up("eyes.off", event.data['timestamp'])
 
-    def blink(slf, event=None):
+    def blink(self, event=None):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
