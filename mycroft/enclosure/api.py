@@ -182,7 +182,7 @@ class EnclosureAPI(object):
                              {'length': length, 'timestamp': monotonic()}))
 
     def eye_status(self):
-        return self.ws.wait_for_response("enclosure.eyes.status")
+        return self.ws.wait_for_response(Message("enclosure.eyes.status"))
 
     def eyes_volume(self, volume):
         """Indicate the volume using the eyes
