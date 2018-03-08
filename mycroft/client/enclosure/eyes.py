@@ -25,6 +25,7 @@ class EnclosureEyes(EnclosureComponent):
     def __init__(self, ws, writer):
         super(EnclosureEyes, self).__init__(ws, writer)
         self.pixels = [[0] * 12, [0] * 12]
+        self.eye_color = 0
 
     def init_events(self):
         self.ws.on('enclosure.eyes.on', self.on)
@@ -46,22 +47,28 @@ class EnclosureEyes(EnclosureComponent):
         parts = command_string.split('=')
         command = parts[0]
         args = parts[1].split(',') if len(parts) > 1 else None
-        if command == 'eyes.set_pixel':
-            self.pixels[arg[0] // 12][arg[0] % 12] = arg[1]
+        if command == 'eyes.set':
+            self.pixels[int(args[0]) // 12][int(args[0]) % 12] = int(args[1])
+            LOG.info(self.pixels[0])
         elif command == 'eyes.color':
-            self.color = arg[0]
+            self.eye_color = int(args[0])
         elif command in ['eyes.reset', 'eyes.blink']:
-            self.pixels = [[self.color] * 12, [self.color] * 12]
+            self.pixels = [[self.eye_color] * 12, [self.eye_color] * 12]
             self.state = (command, args)
         elif command == 'eyes.volume':
             self.pixels = [
-                [self.color if i < args[0] else 0 for i in range(12)],
-                [self.color if i < args[0] else 0 for i in range(12)]
+                [self.eye_color if i < args[0] else 0 for i in range(12)],
+                [self.eye_color if i < args[0] else 0 for i in range(12)]
             ]
         self.state = (command, args, self.pixels)
 
     def status(self, event):
-        ws.emit(event.reply({'state': self.state}))
+        LOG.info('REPORTING STATUS!')
+        try:
+            self.ws.emit(event.response({'state': self.state}))
+        except Exception as e:
+            LOG.exception(e)
+        LOG.info('STATUS REPORTED!!')
 
     def on(self, event=None):
         self.queue_up("eyes.on", event.data['timestamp'])
