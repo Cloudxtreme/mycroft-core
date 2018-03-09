@@ -13,9 +13,10 @@
 # limitations under the License.
 #
 import time
+from .component import EnclosureComponent
 
 
-class EnclosureMouth:
+class EnclosureMouth(EnclosureComponent):
     """
     Listens to enclosure commands for Mycroft's Mouth.
 
@@ -23,9 +24,7 @@ class EnclosureMouth:
     """
 
     def __init__(self, ws, writer):
-        self.ws = ws
-        self.writer = writer
-        self.is_timer_on = False
+        super(EnclosureEyes, self).__init__(ws, writer)
         self.__init_events()
 
     def __init_events(self):
@@ -38,38 +37,39 @@ class EnclosureMouth:
         self.ws.on('enclosure.mouth.text', self.text)
         self.ws.on('enclosure.mouth.display', self.display)
 
-    def reset(self, event=None):
-        self.writer.write("mouth.reset")
+    def reset(self, event):
+        self.queue_up("mouth.reset", event.data['timestamp'])
 
-    def talk(self, event=None):
-        self.writer.write("mouth.talk")
+    def talk(self, event):
+        self.queue_up("mouth.talk", event.data['timestamp'])
 
-    def think(self, event=None):
-        self.writer.write("mouth.think")
+    def think(self, event):
+        self.queue_up('mouth.think', event.data['timestamp'])
 
-    def listen(self, event=None):
-        self.writer.write("mouth.listen")
+    def listen(self, event):
+        self.queue_up('mouth.listen', event.data['timestamp'])
 
-    def smile(self, event=None):
-        self.writer.write("mouth.smile")
+    def smile(self, event):
+        self.queue_up('mouth.smile', event.data['timestamp'])
 
-    def viseme(self, event=None):
+    def viseme(self, event):
         if event and event.data:
-            code = event.data.get("code")
-            time_until = event.data.get("until")
+            code = event.data.get('code')
+            time_until = event.data.get('until')
             # Skip the viseme if the time has expired.  This helps when a
             # system glitch overloads the bus and throws off the timing of
             # the animation timing.
             if code and (not time_until or time.time() < time_until):
-                self.writer.write("mouth.viseme=" + code)
+                self.queue_up('mouth.viseme=' + code, event.data['timestamp'])
 
-    def text(self, event=None):
+    def text(self, event):
         text = ""
         if event and event.data:
             text = event.data.get("text", text)
-        self.writer.write("mouth.text=" + text)
+        self.queue_up("mouth.text=" + text, event.data['timestamp'])
 
-    def display(self, event=None):
+    def display(self, event):
+        timestamp = event.data['timestamp']
         code = ""
         xOffset = ""
         yOffset = ""
@@ -93,9 +93,8 @@ class EnclosureMouth:
             message1 += "$"
             message2 += "$"
             message2 = "mouth.icon=" + message2
-            self.writer.write(message1)
-            time.sleep(0.25)  # writer bugs out if sending messages too rapidly
-            self.writer.write(message2)
+            self.queue_up(message1, timestamp, 0.25)
+            timestamp += 0.001
+            self.queue_up(message2, timestamp, 0.25)
         else:
-            time.sleep(0.1)
-            self.writer.write(message)
+            self.queue_up(message, timestamp, 0.25)
