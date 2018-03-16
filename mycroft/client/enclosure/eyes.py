@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from mycroft.util.log import LOG
-from .component import EnclosureComponent
+from .component import EnclosureComponent, get_duration
 
 
 class EnclosureEyes(EnclosureComponent):
@@ -71,37 +71,46 @@ class EnclosureEyes(EnclosureComponent):
         LOG.info('STATUS REPORTED!!')
 
     def on(self, event=None):
-        self.queue_up("eyes.on", event.data['timestamp'])
+        duration = get_duration(event)
+        self.queue_up("eyes.on", event.data['timestamp'], duration)
 
     def off(self, event=None):
-        self.queue_up("eyes.off", event.data['timestamp'])
+        duration = get_duration(event)
+        self.queue_up("eyes.off", event.data['timestamp'], duration)
 
     def blink(self, event=None):
         side = "b"
+        duration = get_duration(event, 0.5)
         if event and event.data:
             side = event.data.get("side", side)
-        self.queue_up("eyes.blink=" + side, event.data['timestamp'], 0.5)
+        self.queue_up("eyes.blink=" + side, event.data['timestamp'], duration)
 
     def narrow(self, event=None):
-        self.queue_up("eyes.narrow", event.data['timestamp'])
+        duration = get_duration(event, 0.3)
+        self.queue_up("eyes.narrow", event.data['timestamp'], duration)
 
     def look(self, event=None):
+        duration = get_duration(event)
         if event and event.data:
             side = event.data.get("side", "")
-            self.queue_up("eyes.look=" + side, event.data['timestamp'])
+            self.queue_up("eyes.look=" + side, event.data['timestamp'],
+                          duration)
 
     def color(self, event=None):
         r, g, b = 255, 255, 255
+        duration = get_duration(event)
         if event and event.data:
             r = int(event.data.get("r", r))
             g = int(event.data.get("g", g))
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
-        self.queue_up("eyes.color=" + str(color), event.data['timestamp'])
+        self.queue_up("eyes.color=" + str(color), event.data['timestamp'],
+                      duration)
 
     def set_pixel(self, event=None):
         idx = 0
         r, g, b = 255, 255, 255
+        duration = get_duration(event, 0.05)
         if event and event.data:
             idx = int(event.data.get("idx", idx))
             r = int(event.data.get("r", r))
@@ -109,35 +118,45 @@ class EnclosureEyes(EnclosureComponent):
             b = int(event.data.get("b", b))
         color = (r * 65536) + (g * 256) + b
         self.queue_up("eyes.set=" + str(idx) + "," + str(color),
-                      event.data['timestamp'], 0.05)
+                      event.data['timestamp'], duration)
 
     def fill(self, event=None):
         amount = 0
+        duration = get_duration(event)
         if event and event.data:
             percent = int(event.data.get("percentage", 0))
             amount = int(round(23.0 * percent / 100.0))
-        self.queue_up("eyes.fill=" + str(amount), event.data['timestamp'])
+        self.queue_up("eyes.fill=" + str(amount), event.data['timestamp'],
+                      duration)
 
     def brightness(self, event=None):
         level = 30
+        duration = get_duration(event)
         if event and event.data:
             level = event.data.get("level", level)
-        self.queue_up("eyes.level=" + str(level), event.data['timestamp'])
+        self.queue_up("eyes.level=" + str(level), event.data['timestamp'],
+                      duration)
 
     def volume(self, event=None):
         volume = 4
+        duration = get_duration(event)
         if event and event.data:
             volume = event.data.get("volume", volume)
-        self.queue_up("eyes.volume=" + str(volume), event.data['timestamp'])
+        self.queue_up("eyes.volume=" + str(volume), event.data['timestamp'],
+                      duration)
 
     def reset(self, event=None):
-        self.queue_up("eyes.reset", event.data['timestamp'])
+        duration = get_duration(event)
+        self.queue_up("eyes.reset", event.data['timestamp'], duration)
 
     def spin(self, event=None):
-        self.queue_up("eyes.spin", event.data['timestamp'])
+        duration = get_duration(event)
+        self.queue_up("eyes.spin", event.data['timestamp'], duration)
 
     def timed_spin(self, event=None):
         length = 5000
+        duration = get_duration(event)
         if event and event.data:
             length = event.data.get("length", length)
-        self.queue_up("eyes.spin=" + str(length), event.data['timestamp'])
+        self.queue_up("eyes.spin=" + str(length), event.data['timestamp'],
+                      duration)

@@ -17,6 +17,12 @@ from abc import abstractmethod
 from threading import Thread, Lock
 import time
 
+def get_duration(msg, default=None):
+    if msg and msg.data:
+        return event.data.get('duration', default)
+    else:
+        return None
+
 
 class EnclosureComponent(Thread):
     def __init__(self, ws, writer):
