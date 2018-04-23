@@ -36,6 +36,7 @@ class EnclosureMouth(EnclosureComponent):
         self.ws.on('enclosure.mouth.viseme', self.viseme)
         self.ws.on('enclosure.mouth.text', self.text)
         self.ws.on('enclosure.mouth.display', self.display)
+        self.ws.on('enclosure.weather.display', self.display_weather)
 
     def reset(self, event):
         self.queue_up("mouth.reset", event.data['timestamp'])
@@ -98,3 +99,39 @@ class EnclosureMouth(EnclosureComponent):
             self.queue_up(message2, timestamp, 0.25)
         else:
             self.queue_up(message, timestamp, 0.25)
+
+    def display_weather(self, event=None):
+        if event and event.data:
+            # Convert img_code to icon
+            img_code = event.data.get("img_code", None)
+            icon = None
+            if img_code == 0:
+                # sunny
+                icon = "IICEIBMDNLMDIBCEAA"
+            elif img_code == 1:
+                # partly cloudy
+                icon = "IIEEGBGDHLHDHBGEEA"
+            elif img_code == 2:
+                # cloudy
+                icon = "IIIBMDMDODODODMDIB"
+            elif img_code == 3:
+                # light rain
+                icon = "IIMAOJOFPBPJPFOBMA"
+            elif img_code == 4:
+                # raining
+                icon = "IIMIOFOBPFPDPJOFMA"
+            elif img_code == 5:
+                # storming
+                icon = "IIAAIIMEODLBJAAAAA"
+            elif img_code == 6:
+                # snowing
+                icon = "IIJEKCMBPHMBKCJEAA"
+            elif img_code == 7:
+                # wind/mist
+                icon = "IIABIBIBIJIJJGJAGA"
+
+            temp = event.data.get("temp", None)
+            if icon is not None and temp is not None:
+                icon = "x=2," + icon
+                msg = "weather.display=" + str(temp) + "," + str(icon)
+                self.queue_up(msg, 2)
