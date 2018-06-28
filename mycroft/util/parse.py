@@ -70,6 +70,13 @@ def match_one(query, choices):
 
 
 def extractnumber(text, short_scale=True, lang="en-us"):
+    """ Depreciated, replaced by extract_number. Will be removed
+    in the 18.8b release.
+    """
+    return extract_number(text, short_scale, lang)
+
+
+def extract_number(text, short_scale=True, lang="en-us"):
     """Takes in a string and extracts a number.
     Args:
         text (str): the string to extract a number from
@@ -78,12 +85,12 @@ def extractnumber(text, short_scale=True, lang="en-us"):
 
         lang (str): the code for the language text is in
     Returns:
-        (str): The number extracted or the original text.
+        (int, float or False): The number extracted or False if the input
+                               text contains no numbers
     """
 
     lang_lower = str(lang).lower()
     if lang_lower.startswith("en"):
-        # return extractnumber_en(text, remove_articles)
         return extractnumber_en(text, short_scale)
     elif lang_lower.startswith("pt"):
         return extractnumber_pt(text)
