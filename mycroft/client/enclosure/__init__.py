@@ -27,7 +27,6 @@ from mycroft.client.enclosure.display_manager import \
     initiate_display_manager_ws
 from mycroft.client.enclosure.eyes import EnclosureEyes
 from mycroft.client.enclosure.mouth import EnclosureMouth
-from mycroft.client.enclosure.weather import EnclosureWeather
 from mycroft.configuration import Configuration, LocalConf, USER_CONFIG
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
@@ -36,6 +35,8 @@ from mycroft.util import play_wav, create_signal, connected, \
 from mycroft.util.audio_test import record
 from mycroft.util.log import LOG
 from queue import Queue
+
+
 
 
 class EnclosureReader(Thread):
@@ -276,9 +277,9 @@ class Enclosure(object):
 
     def on_arduino_responded(self, event=None):
         self.eyes = EnclosureEyes(self.ws, self.writer)
+        #import pdb; pdb.set_trace()
         self.mouth = EnclosureMouth(self.ws, self.writer)
         self.system = EnclosureArduino(self.ws, self.writer)
-        self.weather = EnclosureWeather(self.ws, self.writer)
         self.__register_events()
         self.__reset()
         self.arduino_responded = True
@@ -341,7 +342,6 @@ class Enclosure(object):
     def __register_mouth_events(self, event=None):
         self.ws.on('recognizer_loop:record_begin', self.mouth.listen)
         self.ws.on('recognizer_loop:record_end', self.mouth.reset)
-        self.ws.on('recognizer_loop:audio_output_start', self.mouth.talk)
         self.ws.on('recognizer_loop:audio_output_end', self.mouth.reset)
 
     def __remove_mouth_events(self, event=None):
@@ -375,7 +375,7 @@ class Enclosure(object):
             self.writer.stop()
             self.reader.stop()
             self.serial.close()
-            self.ws.close()
+            #self.ws.close()
 
     def _handle_pairing_complete(self, Message):
         """

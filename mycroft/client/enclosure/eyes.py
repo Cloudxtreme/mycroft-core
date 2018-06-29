@@ -28,6 +28,7 @@ class EnclosureEyes(EnclosureComponent):
         self.eye_color = 0
 
     def init_events(self):
+        LOG.info('INITING EYES EVENTS')
         self.ws.on('enclosure.eyes.on', self.on)
         self.ws.on('enclosure.eyes.off', self.off)
         self.ws.on('enclosure.eyes.blink', self.blink)
@@ -57,18 +58,16 @@ class EnclosureEyes(EnclosureComponent):
             self.state = (command, args)
         elif command == 'eyes.volume':
             self.pixels = [
-                [self.eye_color if i < args[0] else 0 for i in range(12)],
-                [self.eye_color if i < args[0] else 0 for i in range(12)]
+                [self.eye_color if i < int(args[0]) else 0 for i in range(12)],
+                [self.eye_color if i < int(args[0]) else 0 for i in range(12)]
             ]
         self.state = (command, args, self.pixels)
 
     def status(self, event):
-        LOG.info('REPORTING STATUS!')
         try:
             self.ws.emit(event.response({'state': self.state}))
         except Exception as e:
             LOG.exception(e)
-        LOG.info('STATUS REPORTED!!')
 
     def on(self, event=None):
         duration = get_duration(event)
@@ -97,7 +96,9 @@ class EnclosureEyes(EnclosureComponent):
                           duration)
 
     def color(self, event=None):
+        LOG.info('EYE COLOR')
         r, g, b = 255, 255, 255
+        LOG.info('CHANGING EYES!')
         duration = get_duration(event)
         if event and event.data:
             r = int(event.data.get("r", r))

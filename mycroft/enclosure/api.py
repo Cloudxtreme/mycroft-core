@@ -16,7 +16,7 @@ from PIL import Image
 
 import mycroft.client.enclosure.display_manager as DisplayManager
 from mycroft.messagebus.message import Message
-from monotonic import monotonic
+from time import monotonic
 
 
 '''

@@ -127,16 +127,16 @@ class PlaybackThread(Thread):
                 True if button has been pressed.
         """
         start = time()
+        prev = 0
         for code, duration in pairs:
             if self._clear_visimes:
                 self._clear_visimes = False
                 return True
             if self.enclosure:
                 # Include time stamp to assist with animation timing
-                self.enclosure.mouth_viseme(code, start + duration)
+                self.enclosure.mouth_viseme(code, start, duration - prev)
+                prev = duration
             delta = time() - start
-            if delta < duration:
-                sleep(duration - delta)
         return False
 
     def clear_visimes(self):

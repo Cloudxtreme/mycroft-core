@@ -13,8 +13,7 @@
 # limitations under the License.
 #
 import time
-from .component import EnclosureComponent
-
+from .component import EnclosureComponent, get_duration
 
 class EnclosureMouth(EnclosureComponent):
     """
@@ -24,10 +23,9 @@ class EnclosureMouth(EnclosureComponent):
     """
 
     def __init__(self, ws, writer):
-        super(EnclosureEyes, self).__init__(ws, writer)
-        self.__init_events()
+        super(EnclosureMouth, self).__init__(ws, writer)
 
-    def __init_events(self):
+    def init_events(self):
         self.ws.on('enclosure.mouth.reset', self.reset)
         self.ws.on('enclosure.mouth.talk', self.talk)
         self.ws.on('enclosure.mouth.think', self.think)
@@ -37,6 +35,9 @@ class EnclosureMouth(EnclosureComponent):
         self.ws.on('enclosure.mouth.text', self.text)
         self.ws.on('enclosure.mouth.display', self.display)
         self.ws.on('enclosure.weather.display', self.display_weather)
+
+    def set_state(self, state):
+        pass
 
     def reset(self, event):
         self.queue_up("mouth.reset", event.data['timestamp'])
@@ -55,13 +56,13 @@ class EnclosureMouth(EnclosureComponent):
 
     def viseme(self, event):
         if event and event.data:
+            #print('visime duration {}'.format(event.data['duration']))
             code = event.data.get('code')
-            time_until = event.data.get('until')
             # Skip the viseme if the time has expired.  This helps when a
             # system glitch overloads the bus and throws off the timing of
             # the animation timing.
-            if code and (not time_until or time.time() < time_until):
-                self.queue_up('mouth.viseme=' + code, event.data['timestamp'])
+            self.queue_up('mouth.viseme=' + code, event.data['timestamp'],
+                          get_duration(event))
 
     def text(self, event):
         text = ""
@@ -94,11 +95,11 @@ class EnclosureMouth(EnclosureComponent):
             message1 += "$"
             message2 += "$"
             message2 = "mouth.icon=" + message2
-            self.queue_up(message1, timestamp, 0.25)
+            self.queue_up(message1, timestamp, 0.05)
             timestamp += 0.001
-            self.queue_up(message2, timestamp, 0.25)
+            self.queue_up(message2, timestamp, 0.05)
         else:
-            self.queue_up(message, timestamp, 0.25)
+            self.queue_up(message, timestamp, 0.05)
 
     def display_weather(self, event=None):
         if event and event.data:
@@ -134,4 +135,4 @@ class EnclosureMouth(EnclosureComponent):
             if icon is not None and temp is not None:
                 icon = "x=2," + icon
                 msg = "weather.display=" + str(temp) + "," + str(icon)
-                self.queue_up(msg, 2)
+                self.queue_up(msg, 0.01)

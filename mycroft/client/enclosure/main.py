@@ -21,6 +21,7 @@ def main():
     enclosure = Enclosure()
     try:
         enclosure.run()
+        print('RUN IS OVER!')
     except Exception as e:
         print(e)
     finally:

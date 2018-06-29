@@ -17,11 +17,12 @@ from abc import abstractmethod
 from threading import Thread, Lock
 import time
 
+
 def get_duration(msg, default=None):
     if msg and msg.data:
-        return event.data.get('duration', default)
+        return msg.data.get('duration', 0.05)
     else:
-        return None
+        return 0.05
 
 
 class EnclosureComponent(Thread):
@@ -48,7 +49,6 @@ class EnclosureComponent(Thread):
 
     def queue_up(self, command, timestamp, time=None, owner=None):
         with self.queue_lock:
-            LOG.info('Queueing {}'.format(command))
             self.__queue.insert(0, (command, time, owner, timestamp))
             self.__queue = sorted(self.__queue, key=lambda l: l[3])
             self.__queue.reverse()
@@ -58,12 +58,12 @@ class EnclosureComponent(Thread):
             with self.queue_lock:
                 if len(self.__queue) > 0:
                     command, timeout, owner, _ = self.__queue.pop()
-                    LOG.info('Sending {}'.format(command))
                     self.writer.write(command)
                     try:
                         self.set_state(command)
                     except Exception as e:
                         LOG.exception(e)
-                    time.sleep(timeout or 0.1)
+                    LOG.debug((time.time(), timeout or 0.05))
+                    time.sleep(timeout or 0.05)
                 else:
-                    time.sleep(0.1)
+                    time.sleep(0.05)

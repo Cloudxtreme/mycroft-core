@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 from threading import Lock
+from time import time
 
 from mycroft import dialog
 from mycroft.client.enclosure.api import EnclosureAPI
@@ -33,12 +34,12 @@ loop = None
 
 def handle_record_begin():
     LOG.info("Begin Recording...")
-    ws.emit(Message('recognizer_loop:record_begin'))
+    ws.emit(Message('recognizer_loop:record_begin', {'timestamp': time()}))
 
 
 def handle_record_end():
     LOG.info("End Recording...")
-    ws.emit(Message('recognizer_loop:record_end'))
+    ws.emit(Message('recognizer_loop:record_end', {'timestamp': time()}))
 
 
 def handle_no_internet():
