@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 from copy import copy
+from oslo_concurrency.lockutils import external_lock
 
 import json
 import requests
@@ -63,9 +64,17 @@ class Api(object):
 
     def check_token(self):
         if self.identity.refresh and self.identity.is_expired():
+            lock = external_lock('mycroft-token', lock_path='/tmp/mycroft')
             self.identity = IdentityManager.load()
             if self.identity.is_expired():
-                self.refresh_token()
+                if lock.acquire(blocking=False):
+                    # if the lock was acquired refresh the token 
+                    self.refresh_token()
+                    lock.release()
+                else:
+                    lock.acquire() # block until first refresh is done
+                    self.identity = IdentityManager.load()
+                    lock.release()
 
     def refresh_token(self):
         data = self.send({
