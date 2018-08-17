@@ -14,6 +14,7 @@
 #
 import json
 import time
+from oslo_concurrency.lockutils import external_lock
 
 from mycroft.filesystem import FileSystemAccess
 
@@ -31,22 +32,31 @@ class DeviceIdentity(object):
 
 class IdentityManager(object):
     __identity = None
+    lock = external_lock('identity-file', lock_path='/tmp/mycroft')
 
     @staticmethod
     def load():
+        IdentityManager.lock.acquire()
         try:
             with FileSystemAccess('identity').open('identity2.json', 'r') as f:
                 IdentityManager.__identity = DeviceIdentity(**json.load(f))
+                IdentityManager.__identity.expires_at = time.time() + 20
         except Exception:
             IdentityManager.__identity = DeviceIdentity()
+        finally:
+            IdentityManager.lock.release()
         return IdentityManager.__identity
 
     @staticmethod
-    def save(login=None):
+    def save(login=None, lock=True):
+        if lock:
+            IdentityManager.lock.acquire()
         if login:
             IdentityManager.update(login)
         with FileSystemAccess('identity').open('identity2.json', 'w') as f:
             json.dump(IdentityManager.__identity.__dict__, f)
+        if lock:
+            IdentityManager.lock.release()
 
     @staticmethod
     def update(login=None):
@@ -55,7 +65,7 @@ class IdentityManager(object):
         IdentityManager.__identity.uuid = login.get("uuid", "")
         IdentityManager.__identity.access = login.get("accessToken", "")
         IdentityManager.__identity.refresh = login.get("refreshToken", "")
-        IdentityManager.__identity.expires_at = time.time() + expiration
+        IdentityManager.__identity.expires_at = time.time() + 20#expiration
 
     @staticmethod
     def get():
