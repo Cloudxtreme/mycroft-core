@@ -958,12 +958,12 @@ class MycroftSkill(object):
     def load_vocab_files(self, vocab_dir):
         self.vocab_dir = vocab_dir
         if exists(vocab_dir):
-            load_vocabulary(vocab_dir, self.bus, self.skill_id)
+            load_vocabulary(vocab_dir, self.bus, self.skill_id, self.lang)
         else:
             LOG.debug('No vocab loaded, ' + vocab_dir + ' does not exist')
 
     def load_regex_files(self, regex_dir):
-        load_regex(regex_dir, self.bus, self.skill_id)
+        load_regex(regex_dir, self.bus, self.skill_id, self.lang)
 
     def __handle_stop(self, event):
         """
