@@ -124,11 +124,12 @@ class WebsocketClient(object):
         Returns:
             The received message or None if the response timed out
         """
-        response = []
+        response = None
 
         def handler(message):
             """Receive response data."""
-            response.append(message)
+            nonlocal response
+            response = message
 
         # Setup response handler
         self.once(reply_type or message.type + '.response', handler)
@@ -136,7 +137,7 @@ class WebsocketClient(object):
         self.emit(message)
         # Wait for response
         start_time = time.monotonic()
-        while len(response) == 0:
+        while not response:
             time.sleep(0.2)
             if time.monotonic() - start_time > (timeout or 3.0):
                 try:
@@ -148,7 +149,7 @@ class WebsocketClient(object):
                     # the handler is removed
                     pass
                 return None
-        return response[0]
+        return response
 
     def on(self, event_name, func):
         self.emitter.on(event_name, func)
