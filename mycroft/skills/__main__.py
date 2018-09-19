@@ -27,6 +27,7 @@ from mycroft.util import (
 )
 
 from .skill_manager import SkillManager
+from .api import init_skill_api
 from .core import FallbackSkill
 from .event_scheduler import EventScheduler
 from .intent_service import IntentService
@@ -68,6 +69,7 @@ def _starting_up():
     event_scheduler = EventScheduler(bus)
 
     # Create a thread that monitors the loaded skills, looking for updates
+    init_skill_api(bus)
     skill_manager = SkillManager(bus)
     skill_manager.daemon = True
     # Wait until skills have been loaded once before starting to check

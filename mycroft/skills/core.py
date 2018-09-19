@@ -229,6 +229,7 @@ class MycroftSkill(object):
         self.scheduled_repeats = []
         self.skill_id = ''  # will be set from the path, so guaranteed unique
         self.voc_match_cache = {}
+        self.public_api = {}
 
     @property
     def emitter(self):
@@ -284,6 +285,19 @@ class MycroftSkill(object):
             func = self.settings.run_poll
             bus.on(name, func)
             self.events.append((name, func))
+            name = basename(self._dir.rstrip('/'))
+
+            # Register handlers for the public api
+            for key in self.public_api:
+                if ('type' in self.public_api[key] and
+                        'func' in self.public_api[key]):
+                    self.add_event(self.public_api[key]['type'],
+                                   self.public_api[key]['func'])
+                    # remove the function member since it shouldn't be
+                    # reused and can't be sent over the messagebus
+                    self.public_api[key].pop('func')
+
+            self.add_event('{}.public_api'.format(name), self.send_public_api)
 
     def detach(self):
         for (name, intent) in self.registered_intents:
@@ -297,6 +311,10 @@ class MycroftSkill(object):
         system.
         """
         pass
+
+    def send_public_api(self, message):
+        """ Respond with the skill's public api. """
+        self.bus.emit(message.response(data=self.public_api))
 
     def get_intro_message(self):
         """ Get a message to speak on first load of the skill.
