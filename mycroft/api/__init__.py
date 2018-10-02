@@ -17,6 +17,8 @@ from copy import copy
 import json
 import requests
 from requests import HTTPError, RequestException
+import time
+import os
 
 from mycroft.configuration import Configuration
 from mycroft.configuration.config import DEFAULT_CONFIG, SYSTEM_CONFIG, \
@@ -24,7 +26,9 @@ from mycroft.configuration.config import DEFAULT_CONFIG, SYSTEM_CONFIG, \
 from mycroft.identity import IdentityManager, identity_lock
 from mycroft.version import VersionManager
 from mycroft.util import get_arch, connected, LOG
+from mycroft.util.combo_lock ComboLock
 
+refresh_lock = ComboLock('/tmp/refresh-lock')
 
 _paired_cache = False
 
@@ -75,7 +79,7 @@ class Api(object):
 
     def refresh_token(self):
         LOG.debug('Refreshing token')
-        if identity_lock.acquire(blocking=False):
+        if refresh_lock.acquire(blocking=False):
             try:
                 data = self.send({
                     "path": "auth/token",
@@ -86,10 +90,13 @@ class Api(object):
                 IdentityManager.save(data, lock=False)
                 LOG.debug('Saved credentials')
             finally:
-                identity_lock.release()
+                refresh_lock.release()
         else:  # Someone is updating the identity wait for release
             LOG.debug('Refresh is already in progress, waiting until done')
-            self.identity = IdentityManager.load()
+            with refresh_lock:
+                time.sleep(1.2)
+                os.sync()
+                self.identity = IdentityManager.load()
             LOG.debug('new credentials loaded')
 
     def send(self, params, no_refresh=False):
