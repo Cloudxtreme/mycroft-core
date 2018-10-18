@@ -131,6 +131,7 @@ def handle_stop(event):
         Handler for mycroft.stop, i.e. button press
     """
     loop.force_unmute()
+    loop.awaken()
 
 
 def handle_open():
