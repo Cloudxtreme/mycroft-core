@@ -23,7 +23,6 @@ from mycroft.util.lang.format_en import NUM_STRING_EN, LONG_SCALE_EN, \
     SHORT_SCALE_EN, pronounce_number_en
 
 
-
 SHORT_ORDINAL_STRING_EN = {
     1: 'first',
     2: 'second',
@@ -129,14 +128,15 @@ def extractnumber_en(text, short_scale=True, ordinals=False):
     """
 
     string_num_en = {
-                     "half": 0.5,
-                     "halves": 0.5,
-                     "hundred": 100,
-                     "hundreds": 100,
-                     "thousand": 1000,
-                     "thousands": 1000,
-                     "million": 1000000,
-                     'millions': 1000000}
+        "half": 0.5,
+        "halves": 0.5,
+        "couple": 2,
+        "hundred": 100,
+        "hundreds": 100,
+        "thousand": 1000,
+        "thousands": 1000,
+        "million": 1000000,
+        'millions': 1000000}
 
     for num in NUM_STRING_EN:
         num_string = NUM_STRING_EN[num]
@@ -903,10 +903,10 @@ def extract_datetime_en(string, dateNow, default_time):
                                 tzinfo=extractedDate.tzinfo)
             if extractedDate < temp:
                 extractedDate = extractedDate.replace(
-                                    year=int(currentYear),
-                                    month=int(temp.strftime("%m")),
-                                    day=int(temp.strftime("%d")),
-                                    tzinfo=extractedDate.tzinfo)
+                    year=int(currentYear),
+                    month=int(temp.strftime("%m")),
+                    day=int(temp.strftime("%d")),
+                    tzinfo=extractedDate.tzinfo)
             else:
                 extractedDate = extractedDate.replace(
                     year=int(currentYear) + 1,
@@ -989,6 +989,47 @@ def isFractional_en(input_str, short_scale=True):
     return False
 
 
+def extract_numbers_en(text, short_scale=True, ordinals=False):
+    """
+        Takes in a string and extracts a list of numbers.
+
+    Args:
+        text (str): the string to extract a number from
+        short_scale (bool): Use "short scale" or "long scale" for large
+            numbers -- over a million.  The default is short scale, which
+            is now common in most English speaking countries.
+            See https://en.wikipedia.org/wiki/Names_of_large_numbers
+        ordinals (bool): consider ordinal numbers, e.g. third=3 instead of 1/3
+    Returns:
+        list: list of extracted numbers as floats
+    """
+    numbers = []
+    normalized = text
+    extract = extractnumber_en(normalized, short_scale, ordinals)
+    to_parse = normalized
+    while extract:
+        numbers.append(extract)
+        prev = to_parse
+        num_txt = pronounce_number_en(extract)
+        extract = str(extract)
+        if extract.endswith(".0"):
+            extract = extract[:-2]
+        normalized = normalized.replace(num_txt, extract)
+        # last biggest number was replaced, recurse to handle cases like
+        # test one two 3
+        to_parse = to_parse.replace(num_txt, extract).replace(extract, "")
+        if to_parse == prev:
+            # avoid infinite loops, occasionally pronounced number may be
+            # different from extracted text,
+            # ie pronounce(0.5) != half and extract(half) == 0.5
+            extract = False
+            # TODO fix this
+        else:
+            extract = extractnumber_en(to_parse, short_scale, ordinals)
+    numbers.reverse()
+    return numbers
+
+
 def normalize_en(text, remove_articles):
     """ English string normalization """
 
@@ -1049,10 +1090,8 @@ def normalize_en(text, remove_articles):
 
         normalized += " " + word
 
-    # needs to be here to avoid import error
-    from mycroft.util.parse import extract_numbers
     # replace extracted numbers
-    numbers = extract_numbers(normalized, lang="en-us")
+    numbers = extract_numbers_en(normalized)
     for n in numbers:
         txt = pronounce_number_en(n)
         n = str(n)
