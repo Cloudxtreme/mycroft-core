@@ -25,7 +25,8 @@
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from mycroft.util.lang.parse_common import is_numeric, look_for_fractions
+from mycroft.util.lang.parse_common import is_numeric, look_for_fractions, \
+    extract_numbers_generic
 from mycroft.util.lang.format_fr import pronounce_number_fr
 
 # Undefined articles ["un", "une"] cannot be supressed,
@@ -90,6 +91,7 @@ def number_parse_fr(words, i):
 
         Returns None if no number was found.
     """
+
     def cte_fr(i, s):
         # Check if string s is equal to words[i].
         # If it is return tuple with s, index of next word.
@@ -489,12 +491,12 @@ def extract_datetime_fr(string, currentDate, default_time):
 
     def date_found():
         return found or \
-            (
-                datestr != "" or
-                yearOffset != 0 or monthOffset != 0 or dayOffset or
-                (isTime and (hrAbs or minAbs)) or
-                hrOffset != 0 or minOffset != 0 or secOffset != 0
-            )
+               (
+                       datestr != "" or
+                       yearOffset != 0 or monthOffset != 0 or dayOffset or
+                       (isTime and (hrAbs or minAbs)) or
+                       hrOffset != 0 or minOffset != 0 or secOffset != 0
+               )
 
     if string == "" or not currentDate:
         return None
@@ -515,7 +517,7 @@ def extract_datetime_fr(string, currentDate, default_time):
     timeQualifiersList = ["matin", "après-midi", "soir", "nuit"]
     words_in = ["dans", "après"]
     markers = ["à", "dès", "autour", "vers", "environs", "ce", "cette"] + \
-        words_in
+              words_in
     days = ["lundi", "mardi", "mercredi",
             "jeudi", "vendredi", "samedi", "dimanche"]
     months = ["janvier", "février", "mars", "avril", "mai", "juin",
@@ -781,7 +783,7 @@ def extract_datetime_fr(string, currentDate, default_time):
                             used = 1
                         else:
                             stage = 2
-                            if word[i:i+3] == "min":
+                            if word[i:i + 3] == "min":
                                 i += 1
                     elif stage == 2:
                         break
@@ -800,8 +802,8 @@ def extract_datetime_fr(string, currentDate, default_time):
                         word.isdigit() and
                         wordNext in ["heures", "heure"] and word != "0" and
                         (
-                            int(word) < 100 or
-                            int(word) > 2400
+                                int(word) < 100 or
+                                int(word) > 2400
                         )):
                     # "dans 3 heures", "à 3 heures"
                     if wordPrev in words_in:
@@ -895,9 +897,9 @@ def extract_datetime_fr(string, currentDate, default_time):
                     else:
                         ampm = "am"
             hrAbs = ((hrAbs or 0) + 12 if ampm == "pm" and
-                     (hrAbs or 0) < 12 else hrAbs)
+                                          (hrAbs or 0) < 12 else hrAbs)
             hrAbs = ((hrAbs or 0) - 12 if ampm == "am" and
-                     (hrAbs or 0) >= 12 else hrAbs)
+                                          (hrAbs or 0) >= 12 else hrAbs)
             if (hrAbs or 0) > 24 or ((minAbs or 0) > 59):
                 isTime = False
                 used = 0
@@ -988,7 +990,7 @@ def extract_datetime_fr(string, currentDate, default_time):
         extractedDate = extractedDate + relativedelta(seconds=secOffset)
     for idx, word in enumerate(words):
         if words[idx] == "et" and words[idx - 1] == "" and words[
-                idx + 1] == "":
+            idx + 1] == "":
             words[idx] = ""
 
     resultStr = " ".join(words)
@@ -1079,28 +1081,5 @@ def extract_numbers_fr(text, short_scale=True, ordinals=False):
     Returns:
         list: list of extracted numbers as floats
     """
-    numbers = []
-    normalized = text
-    extract = extractnumber_fr(normalized)
-    to_parse = normalized
-    while extract:
-        numbers.append(extract)
-        prev = to_parse
-        num_txt = pronounce_number_fr(extract)
-        extract = str(extract)
-        if extract.endswith(".0"):
-            extract = extract[:-2]
-        normalized = normalized.replace(num_txt, extract)
-        # last biggest number was replaced, recurse to handle cases like
-        # test one two 3
-        to_parse = to_parse.replace(num_txt, extract).replace(extract, "")
-        if to_parse == prev:
-            # avoid infinite loops, occasionally pronounced number may be
-            # different from extracted text,
-            # ie pronounce(0.5) != half and extract(half) == 0.5
-            extract = False
-            # TODO fix this
-        else:
-            extract = extractnumber_fr(to_parse, short_scale, ordinals)
-    numbers.reverse()
-    return numbers
+    return extract_numbers_generic(text, pronounce_number_fr, extractnumber_fr,
+                                   short_scale=short_scale, ordinals=ordinals)

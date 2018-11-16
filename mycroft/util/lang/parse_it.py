@@ -25,7 +25,8 @@
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from mycroft.util.lang.parse_common import is_numeric, look_for_fractions
+from mycroft.util.lang.parse_common import is_numeric, look_for_fractions, \
+    extract_numbers_generic
 from mycroft.util.lang.format_it import pronounce_number_it
 
 # Undefined articles ["un", "una", "un'"] can not be supressed,
@@ -402,13 +403,13 @@ def extract_datetime_it(string, currentDate, default_time):
 
     def date_found():
         return found or \
-            (
-                datestr != "" or timeStr != "" or
-                yearOffset != 0 or monthOffset != 0 or
-                dayOffset is True or hrOffset != 0 or
-                hrAbs or minOffset != 0 or
-                minAbs or secOffset != 0
-            )
+               (
+                       datestr != "" or timeStr != "" or
+                       yearOffset != 0 or monthOffset != 0 or
+                       dayOffset is True or hrOffset != 0 or
+                       hrAbs or minOffset != 0 or
+                       minAbs or secOffset != 0
+               )
 
     if string == "" or not currentDate:
         return None
@@ -427,7 +428,7 @@ def extract_datetime_it(string, currentDate, default_time):
     timeQualifier = ""
 
     timeQualifiersList = ['mattina', 'pomeriggio', 'sera']
-    markers = ['alle', 'in', 'questo',  'per', 'di']
+    markers = ['alle', 'in', 'questo', 'per', 'di']
     days = ['lunedi', 'martedi', 'mercoledi',
             'giovedi', 'venerdi', 'sabato', 'domenica']
     months = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
@@ -643,7 +644,7 @@ def extract_datetime_it(string, currentDate, default_time):
         if word == "mezzo" and wordNext == "giorno":  # if stt splits the word
             hrAbs = 12
             used += 2
-        elif word == "mezza"and wordNext == "notte":  # if stt splits the word
+        elif word == "mezza" and wordNext == "notte":  # if stt splits the word
             hrAbs = 24
             used += 2
         elif word == "mattina":
@@ -776,8 +777,8 @@ def extract_datetime_it(string, currentDate, default_time):
                     elif (
                             int(word) > 100 and
                             (
-                                wordPrev == "o" or
-                                wordPrev == "oh"
+                                    wordPrev == "o" or
+                                    wordPrev == "oh"
                             )):
                         # 0800 hours (pronounced oh-eight-hundred)
                         strHH = int(word) / 100
@@ -789,8 +790,8 @@ def extract_datetime_it(string, currentDate, default_time):
                             wordNext == "ora" and
                             word[0] != '0' and
                             (
-                                int(word) < 100 and
-                                int(word) > 2400
+                                    int(word) < 100 and
+                                    int(word) > 2400
                             )):
                         # ignores military time
                         # "in 3 hours"
@@ -989,7 +990,7 @@ def extract_datetime_it(string, currentDate, default_time):
         extractedDate = extractedDate + relativedelta(seconds=secOffset)
     for idx, word in enumerate(words):
         if words[idx] == "e" and words[idx - 1] == "" and words[
-                idx + 1] == "":
+            idx + 1] == "":
             words[idx] = ""
 
     resultStr = " ".join(words)
@@ -1041,28 +1042,5 @@ def extract_numbers_it(text, short_scale=True, ordinals=False):
     Returns:
         list: list of extracted numbers as floats
     """
-    numbers = []
-    normalized = text
-    extract = extractnumber_it(normalized)
-    to_parse = normalized
-    while extract:
-        numbers.append(extract)
-        prev = to_parse
-        num_txt = pronounce_number_it(extract)
-        extract = str(extract)
-        if extract.endswith(".0"):
-            extract = extract[:-2]
-        normalized = normalized.replace(num_txt, extract)
-        # last biggest number was replaced, recurse to handle cases like
-        # test one two 3
-        to_parse = to_parse.replace(num_txt, extract).replace(extract, "")
-        if to_parse == prev:
-            # avoid infinite loops, occasionally pronounced number may be
-            # different from extracted text,
-            # ie pronounce(0.5) != half and extract(half) == 0.5
-            extract = False
-            # TODO fix this
-        else:
-            extract = extractnumber_it(to_parse, short_scale, ordinals)
-    numbers.reverse()
-    return numbers
+    return extract_numbers_generic(text, pronounce_number_it, extractnumber_it,
+                                   short_scale=short_scale, ordinals=ordinals)
